@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>城市进化 v6</title>
+<style>
+body { font-family: Arial; text-align: center; }
+#grid { display: grid; grid-template-columns: repeat(10, 40px); gap: 2px; justify-content: center; }
+.cell { width: 40px; height: 40px; background: #eee; cursor: pointer; font-size:12px; }
+.house { background: #4CAF50; }
+.shop { background: #2196F3; }
+.road { background: #888; }
+.mainroad { background: #222; }
+</style>
+</head>
+
+<body>
+
+<h2>🏙️ 城市进化 v6</h2>
+<p>💰资金：<span id="money">120</span> | 👥人口：<span id="people">0</span> | ⭐等级：<span id="level">1</span></p>
+<p>🎯 目标：人口 ≥ 80（12回合）</p>
+<p>回合：<span id="turn">0</span>/12</p>
+<p id="msg" style="color:orange;"></p>
+
+<div>
+<button onclick="mode='house'">🏠房子($10)</button>
+<button onclick="mode='shop'">🏪商店($20)</button>
+<button onclick="mode='road'">🛣️道路($5)</button>
+<button onclick="mode='upgrade'">⬆️选择升级($15)</button>
+<button onclick="nextTurn()">⏭️下一回合</button>
+<button onclick="restart()">🔄再玩一次</button>
+</div>
+
+<div id="grid"></div>
+
+<script>
+let money = 120, turn = 0, mode = "house", level = 1;
+const size = 10;
+let grid = [];
+
+const container = document.getElementById("grid");
+
+// 初始化
+for (let i = 0; i < size * size; i++) {
+  const cell = document.createElement("div");
+  cell.className = "cell";
+  grid.push({type: "empty", level:1, el: cell});
+
+  cell.onclick = () => handleClick(i);
+  container.appendChild(cell);
+}
+
+// 主干道
+let center = 55;
+grid[center].type = "mainroad";
+
+function handleClick(i) {
+
+  if (mode === "upgrade") {
+    if ((grid[i].type === "house" || grid[i].type === "shop") && money >= 15) {
+      grid[i].level++;
+      money -= 15;
+      showMsg("升级成功！⬆️");
+    } else {
+      showMsg("不能升级（没钱或点错）");
+    }
+    render();
+    return;
+  }
+
+  if (grid[i].type !== "empty") return;
+
+  if (mode === "house" && money >= 10) {
+    grid[i] = {type:"house", level:1, el:grid[i].el};
+    money -= 10;
+  }
+  if (mode === "shop" && money >= 20) {
+    grid[i] = {type:"shop", level:1, el:grid[i].el};
+    money -= 20;
+  }
+  if (mode === "road" && money >= 5) {
+    grid[i] = {type:"road", level:1, el:grid[i].el};
+    money -= 5;
+  }
+
+  render();
+}
+
+function render() {
+  grid.forEach(c => {
+    c.el.className = "cell " + (c.type !== "empty" ? c.type : "");
+    c.el.innerText = (c.level>1 && c.type!=="road" && c.type!=="mainroad") ? c.level : "";
+  });
+  document.getElementById("money").innerText = money;
+}
+
+function showMsg(text){
+  document.getElementById("msg").innerText = text;
+}
+
+function getNeighbors(i) {
+  let res = [];
+  let x = i % size, y = Math.floor(i / size);
+
+  [[1,0],[-1,0],[0,1],[0,-1]].forEach(d => {
+    let nx = x + d[0], ny = y + d[1];
+    if (nx>=0 && nx<size && ny>=0 && ny<size) {
+      res.push(ny * size + nx);
+    }
+  });
+  return res;
+}
+
+function connectedToMain(i, visited = new Set()) {
+  if (visited.has(i)) return false;
+  visited.add(i);
+
+  if (grid[i].type === "mainroad") return true;
+
+  return getNeighbors(i).some(n => 
+    (grid[n].type === "road" || grid[n].type === "mainroad") &&
+    connectedToMain(n, visited)
+  );
+}
+
+function nextTurn() {
+  turn++;
+
+  let people = 0;
+  let income = 0;
+
+  grid.forEach((c, i) => {
+    if (c.type === "house" && connectedToMain(i)) {
+      people += 5 * c.level;
+    }
+    if (c.type === "shop" && connectedToMain(i)) {
+      income += 5 * c.level;
+    }
+  });
+
+  money += income;
+
+  level = Math.floor(people / 30) + 1;
+
+  document.getElementById("people").innerText = people;
+  document.getElementById("turn").innerText = turn;
+  document.getElementById("level").innerText = level;
+
+  showMsg("本回合收入 +" + income);
+
+  render();
+
+  if (turn >= 12) {
+    if (people >= 80) {
+      alert("🎉 成功！城市繁荣！");
+    } else {
+      alert("😢 失败，再优化布局！");
+    }
+  }
+}
+
+// ✅ 再玩一次（刷新）
+function restart() {
+  location.reload();
+}
+</script>
+
+</body>
+</html>
