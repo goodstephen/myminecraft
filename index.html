@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>城市规划进阶版</title>
+<style>
+body { font-family: Arial; text-align: center; }
+#grid { display: grid; grid-template-columns: repeat(10, 40px); gap: 2px; justify-content: center; margin-top:10px;}
+.cell { width: 40px; height: 40px; background: #eee; cursor: pointer; }
+.house { background: #4CAF50; }
+.shop { background: #2196F3; }
+.road { background: #888; }
+button { margin:5px; }
+</style>
+</head>
+
+<body>
+
+<h2>🏙️ 城市规划进阶版</h2>
+<p>💰资金：<span id="money">100</span> | 🧱面积：<span id="area">0</span>/100</p>
+
+<div>
+<button onclick="mode='house'">建房 ($10)</button>
+<button onclick="mode='shop'">商店 ($20)</button>
+<button onclick="mode='road'">道路 ($5)</button>
+</div>
+
+<div id="grid"></div>
+
+<script>
+let money = 100;
+let area = 0;
+let mode = "house";
+
+const grid = document.getElementById("grid");
+
+for (let i = 0; i < 100; i++) {
+  const cell = document.createElement("div");
+  cell.className = "cell";
+
+  cell.onclick = () => {
+    if (cell.className !== "cell") return;
+
+    if (mode === "house" && money >= 10 && area < 100) {
+      cell.classList.add("house");
+      money -= 10;
+      area += 1;
+    }
+
+    if (mode === "shop" && money >= 20 && area < 100) {
+      cell.classList.add("shop");
+      money -= 20;
+      area += 1;
+    }
+
+    if (mode === "road" && money >= 5 && area < 100) {
+      cell.classList.add("road");
+      money -= 5;
+      area += 1;
+    }
+
+    update();
+  };
+
+  grid.appendChild(cell);
+}
+
+// 每3秒自动收入
+setInterval(() => {
+  const shops = document.getElementsByClassName("shop").length;
+  money += shops * 5; // 每个商店赚钱
+  update();
+}, 3000);
+
+function update() {
+  document.getElementById("money").innerText = money;
+  document.getElementById("area").innerText = area;
+}
+</script>
+
+</body>
+</html>
